@@ -53,7 +53,7 @@ public class MainActivity extends Activity {
                         if (response.isSuccessful()) {
 
                         } else {
-                            alertUserAboutError();
+                            alertUserAboutError(R.string.error_title,R.string.error_message,R.string.error_ok);
                         }
                     } catch (IOException e) {
                         Log.e(TAG, "Exception caught: ", e);
@@ -61,7 +61,8 @@ public class MainActivity extends Activity {
                 }
             });
         }else{
-            Toast.makeText(this,getString(R.string.network_unavailable), Toast.LENGTH_LONG).show();
+            //Toast.makeText(this,getString(R.string.network_unavailable), Toast.LENGTH_LONG).show();
+            alertUserAboutError(R.string.unNetwork_title, R.string.unNetwork_message, R.string.unNetwork_button);
         }
 
         Log.d(TAG, "Main UI code is running");
@@ -81,8 +82,10 @@ public class MainActivity extends Activity {
         return isAvailable;
     }
 
-    private void alertUserAboutError() {
-        AlertDialogFragment dialog = new AlertDialogFragment();
+    private void alertUserAboutError(int title, int message, int button) {
+        //AlertDialogFragment dialog = new AlertDialogFragment();
+
+        AlertDialogFragment dialog = AlertDialogFragment.getInstance(title,message,button);
         dialog.show(getFragmentManager(),"error_dialog");
     }
 

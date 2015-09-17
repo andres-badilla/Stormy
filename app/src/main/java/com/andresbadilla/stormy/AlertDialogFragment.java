@@ -14,11 +14,25 @@ public class AlertDialogFragment extends DialogFragment {
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         Context context = getActivity();
         AlertDialog.Builder builder = new AlertDialog.Builder(context)
-                .setTitle(context.getString(R.string.error_title))
-                .setMessage(context.getString(R.string.error_message))
-                .setPositiveButton(context.getString(R.string.error_ok), null);
+                .setTitle(context.getString(getArguments().getInt("title")))
+                .setMessage(context.getString(getArguments().getInt("message")))
+                .setPositiveButton(context.getString(getArguments().getInt("button")), null);
 
         AlertDialog dialog = builder.create();
         return dialog;
+    }
+
+    public static AlertDialogFragment getInstance(int title, int message, int button){
+
+        AlertDialogFragment dialog = new AlertDialogFragment();
+
+        Bundle args = new Bundle();
+        args.putInt("title",title);
+        args.putInt("message",message);
+        args.putInt("button",button);
+        dialog.setArguments(args);
+
+        return dialog;
+
     }
 }
