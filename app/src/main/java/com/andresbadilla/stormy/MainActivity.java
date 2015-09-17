@@ -77,6 +77,7 @@ public class MainActivity extends Activity {
             isAvailable = true;
         }
 
+        
         return isAvailable;
     }
 
