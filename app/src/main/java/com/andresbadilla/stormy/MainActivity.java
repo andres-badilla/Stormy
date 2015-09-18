@@ -6,6 +6,10 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.ImageView;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.squareup.okhttp.Call;
@@ -19,24 +23,60 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 
+import butterknife.Bind;
+import butterknife.ButterKnife;
+
 
 public class MainActivity extends Activity {
 
     private static final String TAG =MainActivity.class.getSimpleName() ;
     private CurrentWeather mCurrentWeather;
 
+    @Bind(R.id.timeLabel)
+    TextView mTimeLabel;
+    @Bind(R.id.temperatureLabel)
+    TextView mTemperatureLabel;
+    @Bind(R.id.humidityValue)
+    TextView mHumidityValue;
+    @Bind(R.id.precipValue)
+    TextView mPrecipValue;
+    @Bind(R.id.summaryLabel)
+    TextView mSummaryLabel;
+    @Bind(R.id.iconImageView)
+    ImageView mIconImageView;
+    @Bind(R.id.refreshImageView)
+    ImageView mRefreshImageView;
+    @Bind(R.id.progressBar)
+    ProgressBar mProgressBar;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        ButterKnife.bind(this);
 
+        final double latitude = 9.9894;
+        final double longitude=-84.1082;
+
+        mRefreshImageView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+               getForecast(latitude,longitude);
+            }
+        });
+
+        getForecast(latitude,longitude);
+
+        Log.d(TAG, "Main UI code is running");
+    }
+
+    private void getForecast(double latitude, double longitude) {
         String apiKey = "4c7c4d8d89e13f09563ac7fb5d05de9c";
-        double latitude = 37.8267;
-        double longitude=-122.423;
         String forecastUrl = "https://api.forecast.io/forecast/"+apiKey+"/"+
                                 latitude+","+longitude;
 
         if(isNetworkAvailable()) {
+            toggleRefresh();
 
             OkHttpClient client = new OkHttpClient();
             Request request = new Request.Builder()
@@ -47,16 +87,36 @@ public class MainActivity extends Activity {
             call.enqueue(new Callback() {
                 @Override
                 public void onFailure(Request request, IOException e) {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            toggleRefresh();
+                        }
+                    });
 
+                    alertUserAboutError(R.string.error_title,R.string.error_message,R.string.error_ok);
                 }
 
                 @Override
                 public void onResponse(Response response) throws IOException {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            toggleRefresh();
+                        }
+                    });
+
                     try {
                         String jsonData =response.body().string();
                         Log.v(TAG, jsonData);
                         if (response.isSuccessful()) {
                             mCurrentWeather = getCurrentDetails(jsonData);
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    updateDisplay();
+                                }
+                            });
                         } else {
                             alertUserAboutError(R.string.error_title,R.string.error_message,R.string.error_ok);
                         }
@@ -71,8 +131,25 @@ public class MainActivity extends Activity {
             //Toast.makeText(this,getString(R.string.network_unavailable), Toast.LENGTH_LONG).show();
             alertUserAboutError(R.string.unNetwork_title, R.string.unNetwork_message, R.string.unNetwork_button);
         }
+    }
 
-        Log.d(TAG, "Main UI code is running");
+    private void toggleRefresh() {
+       if(mProgressBar.getVisibility()==View.INVISIBLE){
+           mProgressBar.setVisibility(View.VISIBLE);
+           mRefreshImageView.setVisibility(View.INVISIBLE);
+       }else{
+           mProgressBar.setVisibility(View.INVISIBLE);
+           mRefreshImageView.setVisibility(View.VISIBLE);
+       }
+    }
+
+    private void updateDisplay() {
+        mTemperatureLabel.setText(mCurrentWeather.getTemperature()+"");
+        mTimeLabel.setText("At "+ mCurrentWeather.getFormattedTime()+ " it will be");
+        mHumidityValue.setText(mCurrentWeather.getHumidity()+"%");
+        mPrecipValue.setText(mCurrentWeather.getPrecipChance()+ "%");
+        mSummaryLabel.setText(mCurrentWeather.getSummary());
+        mIconImageView.setImageDrawable(getResources().getDrawable(mCurrentWeather.getIconId()));
     }
 
     private CurrentWeather getCurrentDetails(String jsonData) throws JSONException {
@@ -111,8 +188,6 @@ public class MainActivity extends Activity {
     }
 
     private void alertUserAboutError(int title, int message, int button) {
-        //AlertDialogFragment dialog = new AlertDialogFragment();
-
         AlertDialogFragment dialog = AlertDialogFragment.getInstance(title,message,button);
         dialog.show(getFragmentManager(),"error_dialog");
     }
